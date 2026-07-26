@@ -61,4 +61,32 @@ function buildPiecesChapter() {
   ];
 }
 
-module.exports = { buildPiecesChapter };
+// Version générique réutilisable pour un vrai document (pas le modèle de
+// démonstration) : rows = [{ piece, description, observations }, ...].
+function buildPiecesTable(rows = []) {
+  return new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    rows: [
+      new TableRow({
+        tableHeader: true,
+        children: [
+          headerCell("Pièce", 15),
+          headerCell("Description", 55),
+          headerCell("Observations", 30),
+        ],
+      }),
+      ...rows.map(
+        (row) =>
+          new TableRow({
+            children: [
+              dataCell(row.piece ?? "", 15),
+              dataCell(row.description ?? "", 55),
+              dataCell(row.observations ?? "", 30),
+            ],
+          })
+      ),
+    ],
+  });
+}
+
+module.exports = { buildPiecesChapter, buildPiecesTable };

@@ -12,7 +12,7 @@ const { FONT } = require("./styles");
 // Texte modifiable en un double-clic dans Word : c'est un simple TextRun,
 // pas un champ — l'utilisateur le remplace par le nom réel du dossier pour
 // chaque nouveau mémoire créé à partir du modèle.
-function buildHeader() {
+function buildHeader(text = "[Nom du dossier]") {
   return new Header({
     children: [
       new Paragraph({
@@ -22,7 +22,7 @@ function buildHeader() {
         },
         children: [
           new TextRun({
-            text: "[Nom du dossier]",
+            text,
             bold: true,
             font: FONT,
             size: 20,
