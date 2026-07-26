@@ -202,8 +202,16 @@ function placeholder() {
   });
 }
 
-function buildChapitreAvecSousSections(titre, sousTitres) {
-  return [H1(titre), ...sousTitres.flatMap((sousTitre) => [H2(sousTitre), placeholder()])];
+// sousSections: [{ titre, paragraphes: [string, ...] }] — paragraphes absent
+// ou vide => la sous-section reste un repère "[Section à compléter]".
+function buildChapitreAvecSousSections(titre, sousSections) {
+  return [
+    H1(titre),
+    ...sousSections.flatMap(({ titre: sousTitre, paragraphes }) => [
+      H2(sousTitre),
+      ...(paragraphes && paragraphes.length > 0 ? paragraphes.map(N) : [placeholder()]),
+    ]),
+  ];
 }
 
 function buildChapitreSimple(titre) {
@@ -226,46 +234,55 @@ function buildMemoireContent() {
     ...buildTableOfContents(),
     ...buildChapitreObjet(),
     ...buildChapitreChronologie(),
-    ...buildChapitreAvecSousSections("Situation financière lors de l'octroi de l'assistance judiciaire", [
-      "Situation familiale",
-      "Revenus",
-      "Charges",
-      "Fortune",
-      "Enfants à charge",
-      "Motifs ayant conduit à l'octroi de l'assistance judiciaire",
+    ...buildChapitreAvecSousSections("Situation financière initiale", [
+      {
+        titre: "Situation personnelle et familiale",
+        paragraphes: [
+          "Je suis divorcé et père de deux enfants.",
+          "Mon fils Elmo Stammbach, né le 9 septembre 2010, vit avec moi. J'en assume la garde de fait et son entretien courant. Il est âgé de 15 ans et vient d'entrer au gymnase. Il est vraisemblable qu'il poursuive une formation jusqu'à son terme. Son entretien restera donc à ma charge pendant plusieurs années encore.",
+          "Ma fille Éline Stammbach, née le 3 novembre 2008, vit auprès de sa mère. Conformément au jugement de divorce, je verse une contribution d'entretien de CHF 980.– par mois, allocations familiales en sus, jusqu'à sa majorité ou, au-delà, jusqu'à la fin de sa formation.",
+          "Éline effectue actuellement un apprentissage.",
+          "Je suis domicilié à l'Avenue Floréal 12, 1006 Lausanne, où je réside avec mon fils Elmo.",
+        ],
+      },
+      { titre: "Revenus" },
+      { titre: "Charges" },
+      { titre: "Fortune" },
+      { titre: "Enfants à charge" },
+      { titre: "Motifs ayant conduit à l'octroi de l'assistance judiciaire" },
     ]),
     ...buildChapitreAvecSousSections("Évolution de la situation depuis l'octroi de l'assistance judiciaire", [
-      "Évolution familiale",
-      "Évolution de la procédure",
-      "Évolution professionnelle",
+      { titre: "Évolution familiale" },
+      { titre: "Évolution de la procédure" },
+      { titre: "Évolution professionnelle" },
     ]),
     ...buildChapitreAvecSousSections("Situation financière actuelle", [
-      "Revenus",
-      "Charges",
-      "Fortune",
-      "Liquidités",
-      "Deuxième pilier",
-      "AVS",
-      "Obligations financières existantes",
+      { titre: "Revenus" },
+      { titre: "Charges" },
+      { titre: "Fortune" },
+      { titre: "Liquidités" },
+      { titre: "Deuxième pilier" },
+      { titre: "AVS" },
+      { titre: "Obligations financières existantes" },
     ]),
     ...buildChapitreAvecSousSections("Analyse de la capacité réelle de remboursement", [
-      "Capacité théorique de remboursement",
-      "Capacité réelle de remboursement",
-      "Équilibre budgétaire",
-      "Réserve financière nécessaire",
-      "Proposition financière soutenable",
+      { titre: "Capacité théorique de remboursement" },
+      { titre: "Capacité réelle de remboursement" },
+      { titre: "Équilibre budgétaire" },
+      { titre: "Réserve financière nécessaire" },
+      { titre: "Proposition financière soutenable" },
     ]),
     ...buildChapitreAvecSousSections("Éléments particuliers à prendre en considération", [
-      "Durée exceptionnelle de la procédure",
-      "Conséquences financières du divorce",
-      "Âge et proximité de la retraite",
-      "Incertitudes professionnelles",
-      "Autres circonstances pertinentes",
+      { titre: "Durée exceptionnelle de la procédure" },
+      { titre: "Conséquences financières du divorce" },
+      { titre: "Âge et proximité de la retraite" },
+      { titre: "Incertitudes professionnelles" },
+      { titre: "Autres circonstances pertinentes" },
     ]),
     ...buildChapitreAvecSousSections("Proposition de remboursement", [
-      "Principes retenus",
-      "Proposition de plan de remboursement",
-      "Engagement de collaboration",
+      { titre: "Principes retenus" },
+      { titre: "Proposition de plan de remboursement" },
+      { titre: "Engagement de collaboration" },
     ]),
     ...buildChapitreSimple("Conclusions"),
     ...buildChapitrePieces(),
