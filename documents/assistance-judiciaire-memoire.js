@@ -246,17 +246,80 @@ function simpleTable(headers, rows, widths) {
   return new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: [headerRow, ...dataRows] });
 }
 
+// rows: [{ cells: [string, ...], bold: boolean }]
+function boldableTable(headers, rows, widths) {
+  const headerRow = new TableRow({
+    tableHeader: true,
+    children: headers.map(
+      (h, i) =>
+        new TableCell({
+          width: { size: widths[i], type: WidthType.PERCENTAGE },
+          shading: { type: ShadingType.CLEAR, color: "auto", fill: "D9D9D9" },
+          children: [new Paragraph({ children: [new TextRun({ text: h, bold: true })] })],
+        })
+    ),
+  });
+  const dataRows = rows.map(
+    ({ cells, bold }) =>
+      new TableRow({
+        children: cells.map(
+          (c, i) =>
+            new TableCell({
+              width: { size: widths[i], type: WidthType.PERCENTAGE },
+              children: [new Paragraph({ children: [new TextRun({ text: c, bold: !!bold })] })],
+            })
+        ),
+      })
+  );
+  return new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: [headerRow, ...dataRows] });
+}
+
 function buildChapitreSimple(titre) {
   return [H1(titre), placeholder()];
 }
 
 function buildChapitrePieces() {
+  const rows = [
+    { piece: "1", description: "Certificat de salaire 2025 (Skyguide)" },
+    { piece: "2", description: "Police d'assurance LAMal Samuel" },
+    { piece: "3", description: "Police d'assurance complémentaire LCA Samuel" },
+    { piece: "4", description: "Police d'assurance Elmo (LAMal + LCA)" },
+    { piece: "5", description: "Bail à loyer" },
+    { piece: "6", description: "Avenant n°1 au bail" },
+    { piece: "7a", description: "Relevé UBS 2024", observations: "Dette carte : CHF 10'142.46" },
+    { piece: "7b", description: "Relevé UBS 2025", observations: "Dette carte : CHF 279.04" },
+    { piece: "8a", description: "Relevé Swisscard 2024", observations: "Dette carte : CHF 21'825.69" },
+    { piece: "8b", description: "Relevé Swisscard 2025", observations: "Dette carte : CHF 12'369.28" },
+    { piece: "9", description: "Facture électricité SIL, période 14.11.2024 – 30.11.2025" },
+    { piece: "10", description: "Facture électricité SIL, période 01.03.2026 – 31.05.2026" },
+    { piece: "11", description: "Assurance ménage/incendie ECA 2026" },
+    { piece: "12", description: "Redevance radio/TV SERAFE" },
+    { piece: "13", description: "Assurance animal Thora (Vaudoise Animalia)" },
+    { piece: "14", description: "Facture internet Wingo (juin 2026)" },
+    { piece: "15", description: "Garantie de loyer Firstcaution" },
+    {
+      piece: "16",
+      description: "Certificat de prévoyance 2e pilier (Fondation Skycare, situation au 01.06.2026)",
+    },
+    { piece: "17", description: "Contrat et/ou relevés du crédit personnel Banque Migros", observations: "À fournir" },
+    { piece: "18", description: "Jugement de divorce et convention d'entretien pour Éline", observations: "À fournir" },
+    { piece: "19", description: "Documents fiscaux / avis de taxation 2025", observations: "À fournir" },
+    {
+      piece: "20",
+      description: "Extrait de comptabilité personnelle 2025",
+      observations: "À fournir",
+    },
+  ];
+
   return [
     H1("Liste des pièces"),
     N(
       "Afin de limiter les impressions inutiles, les pièces justificatives numérotées vous sont transmises sous forme électronique, en annexe du courriel de ce jour adressé à recouvrement.dgaic@vd.ch. Je me tiens à disposition pour vous faire parvenir des copies papier de tout ou partie de ces pièces si cela s'avérait nécessaire au traitement du dossier."
     ),
-    buildPiecesTable([]),
+    buildPiecesTable(rows),
+    N(
+      "Le plan social de Skyguide (« DR0539E Social plan for Managers ») mentionné au chapitre 7 n'est pas joint en tant que pièce ; les faits y relatifs sont exposés en texte libre et recoupés avec des sources de presse publiques."
+    ),
   ];
 }
 
@@ -286,33 +349,76 @@ function buildMemoireContent() {
       {
         titre: "Revenus",
         elements: [
+          N("Je suis employé auprès de Skyguide. Mon salaire constitue ma seule source de revenus."),
           simpleTable(
-            ["Revenus", "Montant", "Pièce", "Observation"],
+            ["Revenus", "Montant", "Pièce"],
             [
-              ["Salaire brut annuel 2025", "CHF 195'041.00", "1", "Certificat de salaire"],
-              ["Salaire brut mensuel moyen", "CHF 16'253.42", "1", ""],
-              ["Salaire net annuel 2025", "CHF 155'503.00", "1", ""],
-              ["Salaire net mensuel moyen", "CHF 12'958.58", "1", "Revenu disponible"],
+              ["Salaire brut annuel 2025", "CHF 195'041.00", "1"],
+              ["Salaire brut mensuel moyen", "CHF 16'253.42", "1"],
+              ["Salaire net annuel 2025", "CHF 155'503.00", "1"],
+              ["Salaire net mensuel moyen", "CHF 12'958.58", "1"],
             ],
-            [30, 22, 10, 38]
+            [45, 35, 20]
           ),
         ],
       },
-      { titre: "Charges" },
+      {
+        titre: "Charges",
+        elements: [
+          N(
+            "Certains postes de charges (notamment l'alimentation, les vacances et les transports) sont constitués d'un très grand nombre de transactions individuelles au cours de l'année, rendant peu praticable la production d'un justificatif distinct pour chacune d'entre elles. Pour ces postes, le montant retenu est extrait de ma comptabilité personnelle, tenue tout au long de l'année à partir des relevés bancaires et de carte de crédit (Pièce 20), qui peut être mise à disposition dans son détail sur demande."
+          ),
+          N(
+            "Le montant retenu pour l'alimentation exclut le restaurant (reclassé en loisirs) et intègre la présence effective de mes enfants à mon domicile — à plein temps pour Elmo, et au prorata de la garde légale pour Éline (1 week-end par mois et la moitié des vacances scolaires, soit environ 4.5 jours par mois en moyenne). L'objectif retenu est une alimentation biologique et saine, avec de la viande une fois par semaine."
+          ),
+          boldableTable(
+            ["Poste", "Budget 2025 (réel)", "Budget futur proposé"],
+            [
+              { cells: ["Logement", "-2'638.10", "-2'638.10"] },
+              { cells: ["Alimentation (épicerie, hors restaurant)", "-1'756.44", "-1'720.00"] },
+              { cells: ["Impôts", "-1'899.94", "-1'899.94"] },
+              { cells: ["Enfant Éline (contribution + frais)", "-1'436.75", "-1'436.75"] },
+              { cells: ["Enfant Elmo", "-1'351.47", "-1'351.47"] },
+              { cells: ["Santé (hors primes)", "-1'036.17", "-1'036.17"] },
+              { cells: ["Dettes (crédit Migros + intérêts)", "-713.06", "-713.06"] },
+              { cells: ["Transports", "-530.44", "-530.44"] },
+              { cells: ["Divers/utilities", "-490.81", "-490.81"] },
+              { cells: ["Thora (chien)", "-239.93", "-239.93"] },
+              {
+                cells: ["Sous-total charges fixes/quasi-fixes", "-12'093.11", "-12'056.67"],
+                bold: true,
+              },
+              { cells: ["Loisirs/vacances (activités, vacances, restaurant)", "-2'372.14", "-600.00"] },
+              { cells: ["Dépenses personnelles Sam", "-441.69", "-100.00"] },
+              { cells: ["Dépenses exceptionnelles", "-732.50", "-65.00"] },
+              { cells: ["TOTAL CHARGES", "-15'639.44", "-12'821.67"], bold: true },
+              { cells: ["Revenu net", "+12'958.58", "+12'958.58"] },
+              { cells: ["Solde mensuel avant remboursement", "CHF -2'680.86", "CHF +136.91"], bold: true },
+              { cells: ["Remboursement proposé", "—", "CHF 100.00"] },
+              { cells: ["Solde final", "", "CHF +36.91"], bold: true },
+            ],
+            [46, 27, 27]
+          ),
+          N(
+            "À titre d'illustration, le mois de septembre 2025 a représenté le pic annuel de mes dépenses d'alimentation (épicerie et restaurant confondus), avec un total de CHF 2'878.69, contre une moyenne mensuelle de CHF 2'442.54 sur l'année."
+          ),
+        ],
+      },
       {
         titre: "Fortune",
         paragraphes: [
-          "Selon les relevés bancaires produits, mon compte UBS présentait un solde en ma faveur de CHF 279.04 au 31 décembre 2025 (contre CHF 10'142.46 au 31 décembre 2024) ; des intérêts débiteurs de CHF 343.77 ont été facturés pour l'année 2025.",
-          "Mon compte Swisscard présentait un solde en ma faveur de CHF 12'369.28 au 31 décembre 2025 (contre CHF 21'825.69 au 31 décembre 2024), avec des intérêts en ma faveur de CHF 720.60 pour l'année 2025.",
-          "Mes dettes comprennent notamment la garantie de loyer déposée auprès de Firstcaution, d'un montant de CHF 363.55 par an.",
-          "Les autres éléments de fortune (biens immobiliers, titres ou placements, dettes non encore listées) seront précisés dans une version ultérieure du présent mémoire.",
+          "Selon les relevés bancaires produits, mon compte de carte UBS présentait une dette de CHF 279.04 au 31 décembre 2025 (contre CHF 10'142.46 au 31 décembre 2024) ; des intérêts débiteurs de CHF 343.77 m'ont été facturés pour l'année 2025 sur ce solde dû.",
+          "Mon compte Swisscard présentait une dette de CHF 12'369.28 au 31 décembre 2025 (contre CHF 21'825.69 au 31 décembre 2024) ; des intérêts débiteurs de CHF 720.60 m'ont été facturés pour l'année 2025 sur ce solde dû.",
+          "Mes dettes comprennent également la garantie de loyer déposée auprès de Firstcaution, d'un montant de CHF 363.55 par an.",
+          "Mon capital de prévoyance professionnelle (2e pilier, CHF 1'312'189.55 au 1er juin 2026 selon mon certificat de prévoyance, Pièce 16) n'est pas saisissable avant son échéance (art. 39 al. 2 LPP) et ne constitue donc pas une fortune disponible pour le remboursement de cette dette.",
+          "Les autres éléments de fortune (biens immobiliers, titres ou placements, autres dettes non encore listées) seront précisés dans une version ultérieure du présent mémoire si nécessaire.",
         ],
       },
       {
         titre: "Enfants à charge",
         paragraphes: [
-          "Mon fils Elmo Stammbach, né le 9 septembre 2010, vit avec moi ; j'en assume l'entretien courant (cf. également ch. 3.1). Le détail des charges afférentes fait l'objet d'une catégorisation en cours dans ma comptabilité personnelle et sera communiqué dès sa finalisation.",
-          "Ma fille Éline Stammbach, née le 3 novembre 2008, vit auprès de sa mère. Je verse à ce titre une contribution d'entretien contractuelle de CHF 980.– par mois, allocations familiales en sus, conformément au jugement de divorce. Les frais complémentaires éventuels feront l'objet du même exercice de catégorisation.",
+          "Mon fils Elmo Stammbach, né le 9 septembre 2010, vit avec moi à plein temps (garde de fait). J'assume l'intégralité de son entretien courant.",
+          "Ma fille Éline Stammbach, née le 3 novembre 2008, vit chez sa mère. Je verse une contribution d'entretien contractuelle de CHF 980.– par mois, allocations familiales en sus, conformément au jugement de divorce (Pièce 18 — manquante). Je l'accueille un week-end par mois et la moitié des vacances scolaires, soit environ un mois par an.",
         ],
       },
       { titre: "Motifs ayant conduit à l'octroi de l'assistance judiciaire" },
@@ -341,13 +447,27 @@ function buildMemoireContent() {
     ...buildChapitreAvecSousSections("Éléments particuliers à prendre en considération", [
       { titre: "Durée exceptionnelle de la procédure" },
       { titre: "Conséquences financières du divorce" },
-      { titre: "Âge et proximité de la retraite" },
+      {
+        titre: "Âge et proximité de la retraite",
+        paragraphes: [
+          "Ma situation professionnelle actuelle est marquée par une incertitude significative liée au plan de restructuration engagé par Skyguide et annoncé publiquement le 19 mai 2026 (jusqu'à 220 postes supprimés d'ici fin 2027, ramené à une centaine à l'issue de la consultation selon le communiqué de l'entreprise du 13 juillet 2026), les départs à la retraite anticipée étant explicitement identifiés comme un des leviers pour absorber une partie de ces suppressions.",
+          "J'ai 60 ans et plus de 20 ans d'ancienneté au sein de Skyguide. Deux scénarios se présentent à moi.",
+          "Dans le pire des cas, je pourrais être amené à prendre une retraite anticipée dès novembre 2026, à 61 ans — une retraite complète mais avec une rente nettement plus basse que mon salaire actuel. Selon mon certificat de prévoyance (Pièce 16, Fondation de prévoyance Skycare, situation au 1er juin 2026), cette rente s'élèverait à CHF 4'829.10 (sans 13e rente) à CHF 5'231.53 (avec 13e rente, sous condition de taux de couverture), contre un revenu net actuel de CHF 12'958.58 — soit une réduction de revenu d'environ 60 à 63%.",
+          "Dans le meilleur des cas, je poursuivrais mon activité jusqu'à l'âge ordinaire de la retraite, à 63 ans (novembre 2028), bénéficiant ainsi de deux années supplémentaires de salaire à mon niveau actuel — mais dans un contexte professionnel qui reste incertain, avec un disponible mensuel qui demeure restreint, comme démontré par l'analyse détaillée de mes charges.",
+          "Dans l'un comme dans l'autre de ces scénarios, un engagement de remboursement mensuel modeste reste soutenable ; un montant plus élevé, basé sur ma seule situation actuelle, deviendrait rapidement intenable si la retraite anticipée se concrétisait dès 2026.",
+        ],
+      },
       { titre: "Incertitudes professionnelles" },
       { titre: "Autres circonstances pertinentes" },
     ]),
     ...buildChapitreAvecSousSections("Proposition de remboursement", [
       { titre: "Principes retenus" },
-      { titre: "Proposition de plan de remboursement" },
+      {
+        titre: "Proposition de plan de remboursement",
+        paragraphes: [
+          "Au vu de l'ensemble des éléments exposés ci-dessus — charges réelles 2025, budget réduit proposé pour l'avenir proche, et risque concret d'une baisse de revenu significative dès novembre 2026 en cas de retraite anticipée — je propose un remboursement mensuel de CHF 100.–, montant que je m'engage à honorer de manière régulière et soutenable. Ce montant est proposé comme étant soutenable tant dans le meilleur que dans le pire des scénarios professionnels décrits au chapitre 7.",
+        ],
+      },
       { titre: "Engagement de collaboration" },
     ]),
     ...buildChapitreSimple("Conclusions"),
