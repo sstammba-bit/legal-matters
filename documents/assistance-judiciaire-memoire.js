@@ -11,6 +11,9 @@ const {
   WidthType,
   ShadingType,
   PageBreak,
+  CommentRangeStart,
+  CommentRangeEnd,
+  CommentReference,
 } = require("docx");
 const fs = require("fs");
 const path = require("path");
@@ -23,6 +26,31 @@ const { buildPiecesTable } = require("../src/pieces-table");
 const { cmToTwip } = require("../src/units");
 
 const N = (text) => new Paragraph({ style: "Normal", children: [new TextRun(text)] });
+
+// Paragraphe dont le texte reste à vérifier/compléter par Samuel : le texte
+// proposé est affiché normalement, mais signalé par un vrai commentaire Word
+// en marge (pas de balise visible dans le corps du texte).
+let commentIdCounter = 0;
+const genericComments = [];
+const NG = (text, commentText) => {
+  const id = ++commentIdCounter;
+  genericComments.push({
+    id,
+    author: "Claude",
+    initials: "IA",
+    date: new Date(),
+    children: [new Paragraph({ children: [new TextRun(commentText)] })],
+  });
+  return new Paragraph({
+    style: "Normal",
+    children: [
+      new CommentRangeStart(id),
+      new TextRun(text),
+      new CommentRangeEnd(id),
+      new CommentReference(id),
+    ],
+  });
+};
 
 const H1 = (text) =>
   new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun(text)] });
@@ -70,16 +98,10 @@ function buildPreambule() {
       children: [new TextRun("Préambule")],
     }),
     N(
-      "La présente démarche n'a pas pour objet de remettre en cause le principe du remboursement de l'assistance judiciaire, ni les décisions rendues au cours de la procédure judiciaire."
+      "La présente démarche n'a pas pour objet de remettre en cause le principe du remboursement de l'assistance judiciaire, ni les décisions rendues au cours de la procédure judiciaire. Son objectif est de présenter, de manière complète et documentée, ma situation personnelle, familiale et financière actuelle, afin de permettre à la DGAIC d'apprécier ma capacité réelle de remboursement."
     ),
     N(
-      "Son unique objectif est de présenter, de manière complète, transparente et documentée, ma situation personnelle, familiale et financière actuelle, afin de permettre à la Direction générale des affaires institutionnelles et des communes (DGAIC) d'apprécier ma capacité réelle de remboursement et, le cas échéant, les modalités les plus appropriées pour celui-ci."
-    ),
-    N(
-      "Cette analyse ne peut toutefois être dissociée du contexte dans lequel l'assistance judiciaire a été accordée. La procédure de divorce trouve son origine dans la séparation intervenue en 2013 et ne s'est définitivement achevée qu'à l'issue de la procédure d'appel, soit après plus de dix années de procédure judiciaire. Pendant toute cette période, ma situation personnelle, familiale et financière ont été profondément affectées."
-    ),
-    N(
-      "Le présent mémoire expose les faits de manière chronologique, objective et documentée. Mon intention est de collaborer pleinement avec la DGAIC afin de parvenir à une solution réaliste, proportionnée et durable, compatible avec ma situation financière effective ainsi qu'avec les obligations qui demeurent à ma charge."
+      "Cette situation ne peut être dissociée du contexte dans lequel l'assistance judiciaire a été accordée : une procédure de divorce ayant duré plus de dix ans, de la séparation en 2013 à l'issue définitive de la procédure d'appel en 2025."
     ),
   ];
 }
@@ -274,10 +296,6 @@ function boldableTable(headers, rows, widths) {
   return new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: [headerRow, ...dataRows] });
 }
 
-function buildChapitreSimple(titre) {
-  return [H1(titre), placeholder()];
-}
-
 function buildChapitrePieces() {
   const rows = [
     { piece: "1", description: "Certificat de salaire 2025 (Skyguide)" },
@@ -323,10 +341,6 @@ function buildChapitrePieces() {
   ];
 }
 
-function buildChapitreAnnexes() {
-  return [H1("Annexes"), placeholder()];
-}
-
 function buildMemoireContent() {
   return [
     ...buildTitleBlock(),
@@ -343,7 +357,8 @@ function buildMemoireContent() {
           "Mon fils Elmo Stammbach, né le 9 septembre 2010, vit avec moi. J'en assume la garde de fait et son entretien courant. Il est âgé de 15 ans et vient d'entrer au gymnase. Il est vraisemblable qu'il poursuive une formation jusqu'à son terme. Son entretien restera donc à ma charge pendant plusieurs années encore.",
           "Ma fille Éline Stammbach, née le 3 novembre 2008, vit auprès de sa mère. Conformément au jugement de divorce, je verse une contribution d'entretien de CHF 980.– par mois, allocations familiales en sus, jusqu'à sa majorité ou, au-delà, jusqu'à la fin de sa formation.",
           "Éline effectue actuellement un apprentissage.",
-          "Je suis domicilié à l'Avenue Floréal 12, 1006 Lausanne, où je réside avec mon fils Elmo.",
+          "Au-delà de la contribution d'entretien contractuelle, je prends en charge, selon mes moyens et au fil de ses besoins, un ensemble de frais complémentaires pour Éline : argent de poche (CHF 2'169.90 sur l'année 2025), vêtements (CHF 183.78), cadeaux (CHF 516.00), frais de transport (CFF) pour ses visites (CHF 601.00), sa part de vacances communes (CHF 421.68), ainsi qu'un soutien ponctuel complémentaire à sa mère lorsque la situation le justifie (CHF 1'492.80 en 2025). Je m'efforce de répondre à ses besoins au cas par cas, dans la mesure de mes moyens.",
+          "Je suis domicilié à l'Avenue Floréal 12, 1006 Lausanne, où je réside en qualité de locataire avec mon fils Elmo.",
         ],
       },
       {
@@ -366,7 +381,7 @@ function buildMemoireContent() {
         titre: "Charges",
         elements: [
           N(
-            "Certains postes de charges (notamment l'alimentation, les vacances et les transports) sont constitués d'un très grand nombre de transactions individuelles au cours de l'année, rendant peu praticable la production d'un justificatif distinct pour chacune d'entre elles. Pour ces postes, le montant retenu est extrait de ma comptabilité personnelle, tenue tout au long de l'année à partir des relevés bancaires et de carte de crédit (Pièce 20), qui peut être mise à disposition dans son détail sur demande."
+            "Les montants retenus sont extraits de ma comptabilité personnelle relative à l'année civile 2025 — une année complète, offrant ainsi une moyenne mensuelle représentative de ma situation. Certains postes de charges (notamment l'alimentation, les vacances et les transports) sont constitués d'un très grand nombre de transactions individuelles au cours de l'année, rendant peu praticable la production d'un justificatif distinct pour chacune d'entre elles. Pour ces postes, le montant retenu est extrait de ma comptabilité personnelle, tenue tout au long de l'année à partir des relevés bancaires et de carte de crédit (Pièce 20), qui peut être mise à disposition dans son détail sur demande."
           ),
           N(
             "Le montant retenu pour l'alimentation exclut le restaurant (reclassé en loisirs) et intègre la présence effective de mes enfants à mon domicile — à plein temps pour Elmo, et au prorata de la garde légale pour Éline (1 week-end par mois et la moitié des vacances scolaires, soit environ 4.5 jours par mois en moyenne). L'objectif retenu est une alimentation biologique et saine, avec de la viande une fois par semaine."
@@ -410,43 +425,139 @@ function buildMemoireContent() {
           "Selon les relevés bancaires produits, mon compte de carte UBS présentait une dette de CHF 279.04 au 31 décembre 2025 (contre CHF 10'142.46 au 31 décembre 2024) ; des intérêts débiteurs de CHF 343.77 m'ont été facturés pour l'année 2025 sur ce solde dû.",
           "Mon compte Swisscard présentait une dette de CHF 12'369.28 au 31 décembre 2025 (contre CHF 21'825.69 au 31 décembre 2024) ; des intérêts débiteurs de CHF 720.60 m'ont été facturés pour l'année 2025 sur ce solde dû.",
           "Mes dettes comprennent également la garantie de loyer déposée auprès de Firstcaution, d'un montant de CHF 363.55 par an.",
+          "Ces dettes trouvent principalement leur origine dans ma volonté d'offrir à mes enfants des vacances et des moments de qualité malgré le contexte difficile de ces dernières années — un choix qui a représenté une charge budgétaire significative (cf. section 3.3, poste loisirs/vacances). J'ai conscience que ce train de vie doit être revu à la baisse, et le budget futur proposé en section 3.3 prévoit une réduction substantielle de ce poste, avec des vacances plus modestes à l'avenir.",
           "Mon capital de prévoyance professionnelle (2e pilier, CHF 1'312'189.55 au 1er juin 2026 selon mon certificat de prévoyance, Pièce 16) n'est pas saisissable avant son échéance (art. 39 al. 2 LPP) et ne constitue donc pas une fortune disponible pour le remboursement de cette dette.",
           "Les autres éléments de fortune (biens immobiliers, titres ou placements, autres dettes non encore listées) seront précisés dans une version ultérieure du présent mémoire si nécessaire.",
         ],
       },
       {
-        titre: "Enfants à charge",
-        paragraphes: [
-          "Mon fils Elmo Stammbach, né le 9 septembre 2010, vit avec moi à plein temps (garde de fait). J'assume l'intégralité de son entretien courant.",
-          "Ma fille Éline Stammbach, née le 3 novembre 2008, vit chez sa mère. Je verse une contribution d'entretien contractuelle de CHF 980.– par mois, allocations familiales en sus, conformément au jugement de divorce (Pièce 18 — manquante). Je l'accueille un week-end par mois et la moitié des vacances scolaires, soit environ un mois par an.",
+        titre: "Motifs ayant conduit à l'octroi de l'assistance judiciaire",
+        elements: [
+          NG(
+            "L'assistance judiciaire m'a été accordée dans le cadre de la procédure de divorce, à un moment où mes ressources ne permettaient pas d'assumer seul les frais de justice et d'avocat d'une procédure qui s'est étendue sur plus de dix ans, de la séparation en 2013 à l'issue définitive de la procédure d'appel en 2025.",
+            "GÉNÉRIQUE — à vérifier/compléter par Samuel, notamment la référence exacte de la décision d'octroi."
+          ),
         ],
       },
-      { titre: "Motifs ayant conduit à l'octroi de l'assistance judiciaire" },
     ]),
     ...buildChapitreAvecSousSections("Évolution de la situation depuis l'octroi de l'assistance judiciaire", [
-      { titre: "Évolution familiale" },
-      { titre: "Évolution de la procédure" },
-      { titre: "Évolution professionnelle" },
+      {
+        titre: "Évolution familiale",
+        elements: [
+          NG(
+            "Depuis l'octroi de l'assistance judiciaire, ma situation familiale a évolué : mon fils Elmo, aujourd'hui âgé de 15 ans, vit avec moi et est entré au gymnase ; ma fille Éline, âgée de 17 ans, effectue un apprentissage. La charge financière liée à mes deux enfants demeure significative et continuera pendant plusieurs années.",
+            "GÉNÉRIQUE — à vérifier/compléter par Samuel."
+          ),
+        ],
+      },
+      {
+        titre: "Évolution de la procédure",
+        paragraphes: [
+          "La procédure judiciaire, résumée au chapitre 2, s'est achevée le 10 juillet 2025 avec l'entrée en force définitive du jugement de divorce, à l'issue d'un arrêt du Tribunal cantonal du 27 juin 2025 réformant partiellement le jugement initial du 3 octobre 2024 sur les seules contributions d'entretien. Cette durée exceptionnelle a prolongé d'autant la période durant laquelle l'assistance judiciaire m'a été nécessaire.",
+        ],
+      },
+      {
+        titre: "Évolution professionnelle",
+        elements: [
+          NG(
+            "Mon emploi auprès de Skyguide est resté stable durant toute cette période. Cette stabilité est aujourd'hui remise en question par le plan de restructuration en cours, détaillé au chapitre 7 (Éléments particuliers).",
+            "GÉNÉRIQUE — à vérifier/compléter par Samuel."
+          ),
+        ],
+      },
     ]),
     ...buildChapitreAvecSousSections("Situation financière actuelle", [
-      { titre: "Revenus" },
-      { titre: "Charges" },
-      { titre: "Fortune" },
-      { titre: "Liquidités" },
-      { titre: "Deuxième pilier" },
-      { titre: "AVS" },
-      { titre: "Obligations financières existantes" },
+      {
+        titre: "Revenus",
+        paragraphes: [
+          "Ma situation de revenus actuelle demeure identique à celle exposée en section 3.2 : mon salaire auprès de Skyguide constitue ma seule source de revenus, à hauteur de CHF 12'958.58 nets par mois en moyenne.",
+        ],
+      },
+      {
+        titre: "Charges",
+        paragraphes: [
+          'Ma structure de charges actuelle demeure conforme au tableau exposé en section 3.3, colonne « Budget futur proposé », qui reflète les ajustements que je mets en œuvre pour dégager une capacité de remboursement durable.',
+        ],
+      },
+      {
+        titre: "Fortune",
+        paragraphes: [
+          "Ma situation de fortune demeure celle exposée en section 3.4 : absence de fortune disponible significative, dettes de cartes en diminution, et capital de prévoyance non disponible avant échéance.",
+        ],
+      },
+      {
+        titre: "Liquidités",
+        paragraphes: [
+          "Je ne dispose pas d'épargne liquide significative au-delà des comptes bancaires et de carte de crédit déjà mentionnés en section 3.4, qui présentent des soldes débiteurs plutôt que des avoirs.",
+        ],
+      },
+      {
+        titre: "Deuxième pilier",
+        paragraphes: [
+          "Mon capital de prévoyance professionnelle s'élève à CHF 1'312'189.55 au 1er juin 2026 (Pièce 16). Ce capital n'est pas disponible avant son échéance et les perspectives de rente sont détaillées au chapitre 7 (Âge et proximité de la retraite).",
+        ],
+      },
+      {
+        titre: "AVS",
+        elements: [
+          NG(
+            "Je cotise normalement à l'AVS dans le cadre de mon activité salariée auprès de Skyguide. Je ne dispose pas d'éléments particuliers à signaler concernant ma situation AVS à ce stade.",
+            "GÉNÉRIQUE — à compléter par Samuel si des éléments spécifiques existent, ex. lacunes de cotisations."
+          ),
+        ],
+      },
+      {
+        titre: "Obligations financières existantes",
+        paragraphes: [
+          "Mes obligations financières actuelles comprennent : la contribution d'entretien pour Éline (CHF 980.– par mois, obligation légale), le crédit personnel auprès de la Banque Migros, les soldes dus sur mes comptes de carte UBS et Swisscard (section 3.4), et la garantie de loyer déposée auprès de Firstcaution.",
+        ],
+      },
     ]),
     ...buildChapitreAvecSousSections("Analyse de la capacité réelle de remboursement", [
-      { titre: "Capacité théorique de remboursement" },
-      { titre: "Capacité réelle de remboursement" },
-      { titre: "Équilibre budgétaire" },
-      { titre: "Réserve financière nécessaire" },
-      { titre: "Proposition financière soutenable" },
+      {
+        titre: "Capacité théorique de remboursement",
+        paragraphes: [
+          "Sur la base de mon revenu net actuel (CHF 12'958.58/mois) et du budget futur proposé (CHF 12'821.67/mois, section 3.3), ma capacité théorique de remboursement s'élève à CHF 136.91 par mois avant constitution d'une réserve de sécurité.",
+        ],
+      },
+      {
+        titre: "Capacité réelle de remboursement",
+        paragraphes: [
+          "Compte tenu de l'absence d'épargne liquide (section 5.4) et de l'incertitude professionnelle documentée au chapitre 7, il est nécessaire de conserver une marge de sécurité plutôt que d'engager l'intégralité de ce montant théorique. Ma capacité réelle de remboursement, prudente et soutenable, s'établit à CHF 100.– par mois.",
+        ],
+      },
+      {
+        titre: "Équilibre budgétaire",
+        paragraphes: [
+          "Le budget futur proposé en section 3.3 repose sur une réduction volontaire et significative de mes dépenses discrétionnaires (loisirs/vacances, dépenses personnelles, dépenses exceptionnelles), permettant de passer d'un déficit mensuel réel de CHF -2'680.86 en 2025 à un équilibre positif de CHF +136.91 avant remboursement.",
+        ],
+      },
+      {
+        titre: "Réserve financière nécessaire",
+        paragraphes: [
+          "En l'absence d'épargne disponible (section 5.4), une réserve mensuelle minimale doit être maintenue pour faire face à des dépenses imprévues (santé, réparations, imprévus liés à mes enfants) sans devoir recourir à nouveau à l'endettement. Le solde résiduel de CHF 36.91 par mois après remboursement constitue cette réserve, volontairement limitée.",
+        ],
+      },
+      {
+        titre: "Proposition financière soutenable",
+        paragraphes: [
+          "Sur la base de cette analyse, je propose un remboursement mensuel de CHF 100.–, détaillé au chapitre 8.",
+        ],
+      },
     ]),
     ...buildChapitreAvecSousSections("Éléments particuliers à prendre en considération", [
-      { titre: "Durée exceptionnelle de la procédure" },
-      { titre: "Conséquences financières du divorce" },
+      {
+        titre: "Durée exceptionnelle de la procédure",
+        paragraphes: [
+          "La procédure de divorce s'est étendue sur plus de dix ans, de la séparation en 2013 à l'entrée en force définitive du jugement le 10 juillet 2025. Cette durée exceptionnelle explique l'ampleur des prestations d'assistance judiciaire accordées au fil de la procédure, ainsi que la difficulté à anticiper et provisionner leur remboursement.",
+        ],
+      },
+      {
+        titre: "Conséquences financières du divorce",
+        paragraphes: [
+          "Le divorce a entraîné une réorganisation complète de ma situation financière : entretien de deux ménages distincts (le mien avec Elmo, et la contribution versée pour Éline), partage des frais de procédure, et nécessité de reconstruire une situation stable pour mes enfants dans ce nouveau contexte familial.",
+        ],
+      },
       {
         titre: "Âge et proximité de la retraite",
         paragraphes: [
@@ -457,22 +568,41 @@ function buildMemoireContent() {
           "Dans l'un comme dans l'autre de ces scénarios, un engagement de remboursement mensuel modeste reste soutenable ; un montant plus élevé, basé sur ma seule situation actuelle, deviendrait rapidement intenable si la retraite anticipée se concrétisait dès 2026.",
         ],
       },
-      { titre: "Incertitudes professionnelles" },
+      {
+        titre: "Incertitudes professionnelles",
+        paragraphes: [
+          "Au-delà de la question spécifique de la retraite anticipée développée ci-dessus, le climat général d'incertitude lié au plan de restructuration Skyguide affecte l'ensemble du personnel administratif et technique, dont je fais partie. Cette incertitude renforce la nécessité d'une proposition de remboursement prudente et modulable.",
+        ],
+      },
       { titre: "Autres circonstances pertinentes" },
     ]),
     ...buildChapitreAvecSousSections("Proposition de remboursement", [
-      { titre: "Principes retenus" },
+      {
+        titre: "Principes retenus",
+        paragraphes: [
+          "Ma proposition repose sur trois principes : premièrement, présenter une situation financière réelle et documentée plutôt qu'une estimation théorique ; deuxièmement, proposer un montant que je suis certain de pouvoir honorer durablement, y compris en cas de baisse de revenu ; troisièmement, privilégier un engagement modeste mais fiable plutôt qu'un montant plus élevé risquant d'être interrompu.",
+        ],
+      },
       {
         titre: "Proposition de plan de remboursement",
         paragraphes: [
           "Au vu de l'ensemble des éléments exposés ci-dessus — charges réelles 2025, budget réduit proposé pour l'avenir proche, et risque concret d'une baisse de revenu significative dès novembre 2026 en cas de retraite anticipée — je propose un remboursement mensuel de CHF 100.–, montant que je m'engage à honorer de manière régulière et soutenable. Ce montant est proposé comme étant soutenable tant dans le meilleur que dans le pire des scénarios professionnels décrits au chapitre 7.",
         ],
       },
-      { titre: "Engagement de collaboration" },
+      {
+        titre: "Engagement de collaboration",
+        paragraphes: [
+          "Je m'engage à informer la DGAIC de toute évolution significative de ma situation financière ou professionnelle, notamment en cas de retraite anticipée effective, et à fournir tout document complémentaire utile à l'examen de mon dossier.",
+        ],
+      },
     ]),
-    ...buildChapitreSimple("Conclusions"),
+    H1("Conclusions"),
+    N(
+      "Le présent mémoire expose de manière complète et documentée ma situation personnelle, familiale et financière. Il démontre qu'un remboursement de CHF 100.– par mois constitue le montant maximal que je peux m'engager à honorer de manière durable, compte tenu de mes charges actuelles et des incertitudes professionnelles à venir. Je reste à disposition de la DGAIC pour tout complément d'information."
+    ),
     ...buildChapitrePieces(),
-    ...buildChapitreAnnexes(),
+    H1("Annexes"),
+    N("Sans objet à ce stade."),
   ];
 }
 
@@ -484,6 +614,7 @@ function buildDocument() {
     styles: { paragraphStyles },
     numbering: numberingConfig,
     features: { updateFields: true },
+    comments: { children: genericComments },
     sections: [
       {
         properties: {
