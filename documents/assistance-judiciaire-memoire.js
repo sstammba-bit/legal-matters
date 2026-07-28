@@ -487,20 +487,24 @@ function buildChapitrePieces() {
       piece: "16",
       description: "Certificat de prévoyance 2e pilier (Fondation Skycare, situation au 01.06.2026)",
     },
-    { piece: "17", description: "Contrat et/ou relevés du crédit personnel Banque Migros", observations: "À fournir" },
-    { piece: "18", description: "Jugement de divorce et convention d'entretien pour Éline", observations: "À fournir" },
-    { piece: "19", description: "Documents fiscaux / avis de taxation 2025", observations: "À fournir" },
+    { piece: "17", description: "Relevé de compte Banque Migros 2025" },
+    {
+      piece: "18",
+      description: "Jugement de divorce et convention d'entretien pour Éline",
+      observations: "Disponible sur demande",
+    },
+    { piece: "19", description: "Documents fiscaux / avis de taxation 2025", observations: "Pas encore reçue" },
     {
       piece: "20",
-      description: "Extrait de comptabilité personnelle 2025",
-      observations: "À fournir",
+      description: "Extrait de comptabilité personnelle 2025 (fichier Excel)",
+      observations: "Disponible sur demande, par email ou support électronique",
     },
   ];
 
   return [
     H1("Liste des pièces"),
     N(
-      "Afin de limiter les impressions inutiles, les pièces justificatives numérotées vous sont transmises sous forme électronique, en annexe du courriel de ce jour adressé à recouvrement.dgaic@vd.ch. Je me tiens à disposition pour vous faire parvenir des copies papier de tout ou partie de ces pièces si cela s'avérait nécessaire au traitement du dossier."
+      "Les pièces justificatives numérotées ci-dessous sont jointes au présent mémoire dans la mesure de leur disponibilité à ce jour. Les pièces encore manquantes vous seront transmises sur simple demande, par voie électronique ou postale selon votre préférence."
     ),
     buildPiecesTable(rows),
     N(
@@ -643,7 +647,12 @@ function buildMemoireContent() {
           "Au-delà de la question spécifique de la retraite anticipée développée ci-dessus, le climat général d'incertitude lié au plan de restructuration Skyguide affecte l'ensemble du personnel administratif et technique, dont je fais partie. Cette incertitude renforce la nécessité d'une proposition de remboursement prudente et modulable.",
         ],
       },
-      { titre: "Autres circonstances pertinentes" },
+      {
+        titre: "Autres circonstances pertinentes",
+        paragraphes: [
+          "Je ne dispose pas d'éléments supplémentaires à signaler à ce stade, au-delà de ceux déjà exposés dans les sections qui précèdent.",
+        ],
+      },
     ]),
     ...buildChapitreAvecSousSections("Proposition de remboursement", [
       {
@@ -662,6 +671,7 @@ function buildMemoireContent() {
         titre: "Engagement de collaboration",
         paragraphes: [
           "Je m'engage à informer la DGAIC de toute évolution significative de ma situation financière ou professionnelle, notamment en cas de retraite anticipée effective, et à fournir tout document complémentaire utile à l'examen de mon dossier.",
+          "Le présent mémoire constitue une première version, transmise dans le délai imparti par votre courrier du 30 juin 2026. Certains éléments (jugement de divorce, documents fiscaux 2025, extrait détaillé de comptabilité) n'y sont pas encore joints mais peuvent être fournis sur simple demande de la DGAIC.",
         ],
       },
     ]),
