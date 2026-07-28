@@ -58,7 +58,15 @@ const H1 = (text) =>
 const H2 = (text) =>
   new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun(text)] });
 
-// Titre + sous-titre + numéro de dossier, hors table des matières (pas un Heading).
+const titleLine = (text, opts = {}, spacingBefore = 0) =>
+  new Paragraph({
+    alignment: AlignmentType.CENTER,
+    spacing: { before: spacingBefore, after: 120 },
+    children: [new TextRun({ text, font: FONT, size: 24, ...opts })],
+  });
+
+// Titre + sous-titre, expéditeur, destinataire, numéro de dossier — hors
+// table des matières (pas un Heading).
 function buildTitleBlock() {
   return [
     new Paragraph({
@@ -68,33 +76,37 @@ function buildTitleBlock() {
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { after: 120 },
+      spacing: { after: 480 },
       children: [
         new TextRun({
-          text: "relatif à la demande de remboursement de l'assistance judiciaire",
+          text: "Relatif à la demande de remboursement de l'assistance judiciaire",
           bold: true,
           font: FONT,
           size: 28,
         }),
       ],
     }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 480 },
-      children: [
-        new TextRun({ text: "Dossier AJ19002691", font: FONT, size: 24 }),
-      ],
-    }),
+    titleLine("Samuel Stammbach", { bold: true }),
+    titleLine("Avenue Floréal 12"),
+    titleLine("1006 Lausanne"),
+    titleLine("À l'attention de la", {}, 360),
+    titleLine("Direction générale des affaires institutionnelles et des communes (DGAIC)"),
+    titleLine("Direction du recouvrement"),
+    titleLine("Dossier AJ19002691", { bold: true }, 360),
+    titleLine("Lausanne, le [date]"),
   ];
 }
 
 // Titre Heading1 mais sans numérotation automatique (le Préambule précède le
 // chapitre I et n'est traditionnellement pas numéroté dans un mémoire).
+// Reste sur la page de garde (pas de saut de page avant), mais s'en démarque
+// visuellement par un espacement généreux avant le titre.
 function buildPreambule() {
   return [
     new Paragraph({
       heading: HeadingLevel.HEADING_1,
       numbering: false,
+      spacing: { before: 960 },
       children: [new TextRun("Préambule")],
     }),
     N(
@@ -103,6 +115,7 @@ function buildPreambule() {
     N(
       "Cette situation ne peut être dissociée du contexte dans lequel l'assistance judiciaire a été accordée : une procédure de divorce ayant duré plus de dix ans, de la séparation en 2013 à l'issue définitive de la procédure d'appel en 2025."
     ),
+    new Paragraph({ children: [new PageBreak()] }),
   ];
 }
 
@@ -268,6 +281,161 @@ function simpleTable(headers, rows, widths) {
   return new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: [headerRow, ...dataRows] });
 }
 
+// Table financière (3.3) : colonne "Poste" alignée à gauche et NON justifiée
+// (le style Normal hérité est justifié par défaut, ce qui étire les espaces
+// dans une cellule étroite multi-lignes — d'où l'override explicite ici),
+// colonnes de montants alignées à droite. mainText + noteText (optionnel, en
+// italique) permettent d'ajouter une remarque à la suite d'un poste.
+function chargesRow(mainText, noteText, montant2025, montantFutur, bold) {
+  const posteChildren = [new TextRun({ text: mainText, bold: !!bold })];
+  if (noteText) {
+    posteChildren.push(new TextRun({ text: " — ", bold: !!bold }));
+    posteChildren.push(new TextRun({ text: noteText, italics: true }));
+  }
+  return new TableRow({
+    children: [
+      new TableCell({
+        width: { size: 55, type: WidthType.PERCENTAGE },
+        children: [new Paragraph({ alignment: AlignmentType.LEFT, children: posteChildren })],
+      }),
+      new TableCell({
+        width: { size: 22.5, type: WidthType.PERCENTAGE },
+        children: [
+          new Paragraph({
+            alignment: AlignmentType.RIGHT,
+            children: [new TextRun({ text: montant2025, bold: !!bold })],
+          }),
+        ],
+      }),
+      new TableCell({
+        width: { size: 22.5, type: WidthType.PERCENTAGE },
+        children: [
+          new Paragraph({
+            alignment: AlignmentType.RIGHT,
+            children: [new TextRun({ text: montantFutur, bold: !!bold })],
+          }),
+        ],
+      }),
+    ],
+  });
+}
+
+function buildChargesTable() {
+  const headerRow = new TableRow({
+    tableHeader: true,
+    children: [
+      new TableCell({
+        width: { size: 55, type: WidthType.PERCENTAGE },
+        shading: { type: ShadingType.CLEAR, color: "auto", fill: "D9D9D9" },
+        children: [
+          new Paragraph({
+            alignment: AlignmentType.LEFT,
+            children: [new TextRun({ text: "Poste", bold: true })],
+          }),
+        ],
+      }),
+      new TableCell({
+        width: { size: 22.5, type: WidthType.PERCENTAGE },
+        shading: { type: ShadingType.CLEAR, color: "auto", fill: "D9D9D9" },
+        children: [
+          new Paragraph({
+            alignment: AlignmentType.RIGHT,
+            children: [new TextRun({ text: "Budget 2025 (réel)", bold: true })],
+          }),
+        ],
+      }),
+      new TableCell({
+        width: { size: 22.5, type: WidthType.PERCENTAGE },
+        shading: { type: ShadingType.CLEAR, color: "auto", fill: "D9D9D9" },
+        children: [
+          new Paragraph({
+            alignment: AlignmentType.RIGHT,
+            children: [new TextRun({ text: "Budget futur proposé", bold: true })],
+          }),
+        ],
+      }),
+    ],
+  });
+
+  return new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    rows: [
+      headerRow,
+      chargesRow(
+        "Logement (location, électricité/Services industriels, Radio/TV-Serafe, assurance ménage et RC, internet)",
+        null,
+        "2'638 fr.",
+        "2'638 fr."
+      ),
+      chargesRow(
+        "Alimentation (épicerie, fournitures ménage, hors restaurant)",
+        null,
+        "1'756 fr.",
+        "1'720 fr."
+      ),
+      chargesRow("Impôts", null, "1'900 fr.", "1'900 fr."),
+      chargesRow(
+        "Enfant Éline (contribution, habits, argent de poche, voyages, …)",
+        null,
+        "1'437 fr.",
+        "1'437 fr."
+      ),
+      chargesRow(
+        "Enfant Elmo (habits, éducation, équipements, santé, téléphone, argent de poche)",
+        "le budget futur augmente car Elmo entre au gymnase à 16 ans : écolage ~700 fr., frais de transport CFF plus élevés",
+        "1'351 fr.",
+        "1'600 fr."
+      ),
+      chargesRow(
+        "Santé (primes assurance maladie/complémentaire, médecine alternative, compléments, dentiste)",
+        null,
+        "1'036 fr.",
+        "1'000 fr."
+      ),
+      chargesRow(
+        "Dettes (crédit Migros + intérêts)",
+        "budget futur : réduction des intérêts de cartes, arrêt de leur utilisation",
+        "713 fr.",
+        "650 fr."
+      ),
+      chargesRow("Transports", "réduction future ; pas de voiture", "530 fr.", "400 fr."),
+      chargesRow(
+        "Divers/utilities : services streaming, services smartphone, services logiciels (Microsoft)",
+        "budget futur réduit : arrêt Netflix et autres services payants, utilisation des services gratuits ou déjà couverts par la redevance",
+        "491 fr.",
+        "400 fr."
+      ),
+      chargesRow("Thora (chien)", null, "240 fr.", "240 fr."),
+      chargesRow(
+        "Sous-total charges fixes/quasi-fixes",
+        null,
+        "12'092 fr.",
+        "11'985 fr.",
+        true
+      ),
+      chargesRow(
+        "Loisirs/vacances (activités, vacances, restaurant)",
+        null,
+        "2'372 fr.",
+        "600 fr."
+      ),
+      chargesRow("Dépenses personnelles Sam", null, "442 fr.", "100 fr."),
+      chargesRow("Dépenses exceptionnelles", null, "733 fr.", "65 fr."),
+      chargesRow("TOTAL CHARGES", null, "15'639 fr.", "12'750 fr.", true),
+      chargesRow("Revenu net", null, "12'959 fr.", "12'959 fr."),
+      chargesRow(
+        "Solde mensuel avant remboursement",
+        null,
+        "-2'680 fr.",
+        "+209 fr.",
+        true
+      ),
+      chargesRow("Remboursement proposé", null, "—", "100 fr."),
+      chargesRow("Solde final", null, "", "109 fr.", true),
+    ],
+  });
+}
+
 // rows: [{ cells: [string, ...], bold: boolean }]
 function boldableTable(headers, rows, widths) {
   const headerRow = new TableRow({
@@ -336,7 +504,7 @@ function buildChapitrePieces() {
     ),
     buildPiecesTable(rows),
     N(
-      "Le plan social de Skyguide (« DR0539E Social plan for Managers ») mentionné au chapitre 7 n'est pas joint en tant que pièce ; les faits y relatifs sont exposés en texte libre et recoupés avec des sources de presse publiques."
+      "Le plan social de Skyguide (« DR0539E Social plan for Managers ») mentionné au chapitre 5 n'est pas joint en tant que pièce ; les faits y relatifs sont exposés en texte libre et recoupés avec des sources de presse publiques."
     ),
   ];
 }
@@ -344,7 +512,6 @@ function buildChapitrePieces() {
 function buildMemoireContent() {
   return [
     ...buildTitleBlock(),
-    new Paragraph({ children: [new PageBreak()] }),
     ...buildPreambule(),
     ...buildTableOfContents(),
     ...buildChapitreObjet(),
@@ -386,34 +553,7 @@ function buildMemoireContent() {
           N(
             "Le montant retenu pour l'alimentation exclut le restaurant (reclassé en loisirs) et intègre la présence effective de mes enfants à mon domicile — à plein temps pour Elmo, et au prorata de la garde légale pour Éline (1 week-end par mois et la moitié des vacances scolaires, soit environ 4.5 jours par mois en moyenne). L'objectif retenu est une alimentation biologique et saine, avec de la viande une fois par semaine."
           ),
-          boldableTable(
-            ["Poste", "Budget 2025 (réel)", "Budget futur proposé"],
-            [
-              { cells: ["Logement", "-2'638.10", "-2'638.10"] },
-              { cells: ["Alimentation (épicerie, hors restaurant)", "-1'756.44", "-1'720.00"] },
-              { cells: ["Impôts", "-1'899.94", "-1'899.94"] },
-              { cells: ["Enfant Éline (contribution + frais)", "-1'436.75", "-1'436.75"] },
-              { cells: ["Enfant Elmo", "-1'351.47", "-1'351.47"] },
-              { cells: ["Santé (hors primes)", "-1'036.17", "-1'036.17"] },
-              { cells: ["Dettes (crédit Migros + intérêts)", "-713.06", "-713.06"] },
-              { cells: ["Transports", "-530.44", "-530.44"] },
-              { cells: ["Divers/utilities", "-490.81", "-490.81"] },
-              { cells: ["Thora (chien)", "-239.93", "-239.93"] },
-              {
-                cells: ["Sous-total charges fixes/quasi-fixes", "-12'093.11", "-12'056.67"],
-                bold: true,
-              },
-              { cells: ["Loisirs/vacances (activités, vacances, restaurant)", "-2'372.14", "-600.00"] },
-              { cells: ["Dépenses personnelles Sam", "-441.69", "-100.00"] },
-              { cells: ["Dépenses exceptionnelles", "-732.50", "-65.00"] },
-              { cells: ["TOTAL CHARGES", "-15'639.44", "-12'821.67"], bold: true },
-              { cells: ["Revenu net", "+12'958.58", "+12'958.58"] },
-              { cells: ["Solde mensuel avant remboursement", "CHF -2'680.86", "CHF +136.91"], bold: true },
-              { cells: ["Remboursement proposé", "—", "CHF 100.00"] },
-              { cells: ["Solde final", "", "CHF +36.91"], bold: true },
-            ],
-            [46, 27, 27]
-          ),
+          buildChargesTable(),
           N(
             "À titre d'illustration, le mois de septembre 2025 a représenté le pic annuel de mes dépenses d'alimentation (épicerie et restaurant confondus), avec un total de CHF 2'878.69, contre une moyenne mensuelle de CHF 2'442.54 sur l'année."
           ),
@@ -440,108 +580,35 @@ function buildMemoireContent() {
         ],
       },
     ]),
-    ...buildChapitreAvecSousSections("Évolution de la situation depuis l'octroi de l'assistance judiciaire", [
-      {
-        titre: "Évolution familiale",
-        elements: [
-          NG(
-            "Depuis l'octroi de l'assistance judiciaire, ma situation familiale a évolué : mon fils Elmo, aujourd'hui âgé de 15 ans, vit avec moi et est entré au gymnase ; ma fille Éline, âgée de 17 ans, effectue un apprentissage. La charge financière liée à mes deux enfants demeure significative et continuera pendant plusieurs années.",
-            "GÉNÉRIQUE — à vérifier/compléter par Samuel."
-          ),
-        ],
-      },
-      {
-        titre: "Évolution de la procédure",
-        paragraphes: [
-          "La procédure judiciaire, résumée au chapitre 2, s'est achevée le 10 juillet 2025 avec l'entrée en force définitive du jugement de divorce, à l'issue d'un arrêt du Tribunal cantonal du 27 juin 2025 réformant partiellement le jugement initial du 3 octobre 2024 sur les seules contributions d'entretien. Cette durée exceptionnelle a prolongé d'autant la période durant laquelle l'assistance judiciaire m'a été nécessaire.",
-        ],
-      },
-      {
-        titre: "Évolution professionnelle",
-        elements: [
-          NG(
-            "Mon emploi auprès de Skyguide est resté stable durant toute cette période. Cette stabilité est aujourd'hui remise en question par le plan de restructuration en cours, détaillé au chapitre 7 (Éléments particuliers).",
-            "GÉNÉRIQUE — à vérifier/compléter par Samuel."
-          ),
-        ],
-      },
-    ]),
-    ...buildChapitreAvecSousSections("Situation financière actuelle", [
-      {
-        titre: "Revenus",
-        paragraphes: [
-          "Ma situation de revenus actuelle demeure identique à celle exposée en section 3.2 : mon salaire auprès de Skyguide constitue ma seule source de revenus, à hauteur de CHF 12'958.58 nets par mois en moyenne.",
-        ],
-      },
-      {
-        titre: "Charges",
-        paragraphes: [
-          'Ma structure de charges actuelle demeure conforme au tableau exposé en section 3.3, colonne « Budget futur proposé », qui reflète les ajustements que je mets en œuvre pour dégager une capacité de remboursement durable.',
-        ],
-      },
-      {
-        titre: "Fortune",
-        paragraphes: [
-          "Ma situation de fortune demeure celle exposée en section 3.4 : absence de fortune disponible significative, dettes de cartes en diminution, et capital de prévoyance non disponible avant échéance.",
-        ],
-      },
-      {
-        titre: "Liquidités",
-        paragraphes: [
-          "Je ne dispose pas d'épargne liquide significative au-delà des comptes bancaires et de carte de crédit déjà mentionnés en section 3.4, qui présentent des soldes débiteurs plutôt que des avoirs.",
-        ],
-      },
-      {
-        titre: "Deuxième pilier",
-        paragraphes: [
-          "Mon capital de prévoyance professionnelle s'élève à CHF 1'312'189.55 au 1er juin 2026 (Pièce 16). Ce capital n'est pas disponible avant son échéance et les perspectives de rente sont détaillées au chapitre 7 (Âge et proximité de la retraite).",
-        ],
-      },
-      {
-        titre: "AVS",
-        elements: [
-          NG(
-            "Je cotise normalement à l'AVS dans le cadre de mon activité salariée auprès de Skyguide. Je ne dispose pas d'éléments particuliers à signaler concernant ma situation AVS à ce stade.",
-            "GÉNÉRIQUE — à compléter par Samuel si des éléments spécifiques existent, ex. lacunes de cotisations."
-          ),
-        ],
-      },
-      {
-        titre: "Obligations financières existantes",
-        paragraphes: [
-          "Mes obligations financières actuelles comprennent : la contribution d'entretien pour Éline (CHF 980.– par mois, obligation légale), le crédit personnel auprès de la Banque Migros, les soldes dus sur mes comptes de carte UBS et Swisscard (section 3.4), et la garantie de loyer déposée auprès de Firstcaution.",
-        ],
-      },
-    ]),
     ...buildChapitreAvecSousSections("Analyse de la capacité réelle de remboursement", [
       {
         titre: "Capacité théorique de remboursement",
         paragraphes: [
-          "Sur la base de mon revenu net actuel (CHF 12'958.58/mois) et du budget futur proposé (CHF 12'821.67/mois, section 3.3), ma capacité théorique de remboursement s'élève à CHF 136.91 par mois avant constitution d'une réserve de sécurité.",
+          "Sur la base de mon revenu net actuel (12'959 fr./mois) et du budget futur proposé (12'750 fr./mois, section 3.3), ma capacité théorique de remboursement s'élève à 209 fr. par mois avant constitution d'une réserve de sécurité.",
         ],
       },
       {
         titre: "Capacité réelle de remboursement",
         paragraphes: [
-          "Compte tenu de l'absence d'épargne liquide (section 5.4) et de l'incertitude professionnelle documentée au chapitre 7, il est nécessaire de conserver une marge de sécurité plutôt que d'engager l'intégralité de ce montant théorique. Ma capacité réelle de remboursement, prudente et soutenable, s'établit à CHF 100.– par mois.",
+          "Compte tenu de l'absence d'épargne liquide (section 3.4) et de l'incertitude professionnelle documentée au chapitre 5, il est nécessaire de conserver une marge de sécurité plutôt que d'engager l'intégralité de ce montant théorique. Ma capacité réelle de remboursement, prudente et soutenable, s'établit à 100 fr. par mois.",
         ],
       },
       {
         titre: "Équilibre budgétaire",
         paragraphes: [
-          "Le budget futur proposé en section 3.3 repose sur une réduction volontaire et significative de mes dépenses discrétionnaires (loisirs/vacances, dépenses personnelles, dépenses exceptionnelles), permettant de passer d'un déficit mensuel réel de CHF -2'680.86 en 2025 à un équilibre positif de CHF +136.91 avant remboursement.",
+          "Le budget futur proposé en section 3.3 repose sur une réduction volontaire et significative de mes dépenses discrétionnaires (loisirs/vacances, dépenses personnelles, dépenses exceptionnelles), permettant de passer d'un déficit mensuel réel de -2'680 fr. en 2025 à un équilibre positif de +209 fr. avant remboursement.",
         ],
       },
       {
         titre: "Réserve financière nécessaire",
         paragraphes: [
-          "En l'absence d'épargne disponible (section 5.4), une réserve mensuelle minimale doit être maintenue pour faire face à des dépenses imprévues (santé, réparations, imprévus liés à mes enfants) sans devoir recourir à nouveau à l'endettement. Le solde résiduel de CHF 36.91 par mois après remboursement constitue cette réserve, volontairement limitée.",
+          "En l'absence d'épargne disponible (section 3.4), une réserve mensuelle minimale doit être maintenue pour faire face à des dépenses imprévues (santé, réparations, imprévus liés à mes enfants) sans devoir recourir à nouveau à l'endettement. Le solde résiduel de 109 fr. par mois après remboursement constitue cette réserve, volontairement limitée.",
         ],
       },
       {
         titre: "Proposition financière soutenable",
         paragraphes: [
-          "Sur la base de cette analyse, je propose un remboursement mensuel de CHF 100.–, détaillé au chapitre 8.",
+          "Sur la base de cette analyse, je propose un remboursement mensuel de CHF 100.–, détaillé au chapitre 6.",
         ],
       },
     ]),
@@ -566,6 +633,8 @@ function buildMemoireContent() {
           "Dans le pire des cas, je pourrais être amené à prendre une retraite anticipée dès novembre 2026, à 61 ans — une retraite complète mais avec une rente nettement plus basse que mon salaire actuel. Selon mon certificat de prévoyance (Pièce 16, Fondation de prévoyance Skycare, situation au 1er juin 2026), cette rente s'élèverait à CHF 4'829.10 (sans 13e rente) à CHF 5'231.53 (avec 13e rente, sous condition de taux de couverture), contre un revenu net actuel de CHF 12'958.58 — soit une réduction de revenu d'environ 60 à 63%.",
           "Dans le meilleur des cas, je poursuivrais mon activité jusqu'à l'âge ordinaire de la retraite, à 63 ans (novembre 2028), bénéficiant ainsi de deux années supplémentaires de salaire à mon niveau actuel — mais dans un contexte professionnel qui reste incertain, avec un disponible mensuel qui demeure restreint, comme démontré par l'analyse détaillée de mes charges.",
           "Dans l'un comme dans l'autre de ces scénarios, un engagement de remboursement mensuel modeste reste soutenable ; un montant plus élevé, basé sur ma seule situation actuelle, deviendrait rapidement intenable si la retraite anticipée se concrétisait dès 2026.",
+          "S'agissant de l'AVS, ma carrière de cotisation devrait me permettre de percevoir une rente proche du maximum légal dès l'âge de référence de 65 ans. Le montant maximal de la rente AVS pour une personne seule s'élève, selon les données 2026, à environ CHF 2'450 à 2'520.– par mois (les sources disponibles varient légèrement sur ce montant ; un extrait de compte individuel AVS permettrait de le confirmer précisément), auquel s'ajoutera une 13e rente dès décembre 2026.",
+          "Dans l'hypothèse où je conserverais mon emploi jusqu'à l'âge ordinaire de la retraite, à 63 ans (novembre 2028), je percevrais dès cet âge une rente LPP de CHF 5'777.50 par mois (sans 13e rente ; Pièce 16). Dès 65 ans, cette rente LPP se combinerait avec la rente AVS, proche du maximum comme indiqué ci-dessus (environ CHF 2'450 à 2'520.–/mois), portant mon revenu total à environ CHF 8'200 à 8'300.– par mois — soit encore nettement en dessous de mon revenu net actuel de CHF 12'958.58/mois. Cette situation devra être assumée alors que ma fille Éline pourrait encore être en formation (jusqu'en 2035 au plus tard, selon la durée de ses études), ce qui maintient une charge financière significative bien après le début de ma retraite.",
         ],
       },
       {
@@ -586,7 +655,7 @@ function buildMemoireContent() {
       {
         titre: "Proposition de plan de remboursement",
         paragraphes: [
-          "Au vu de l'ensemble des éléments exposés ci-dessus — charges réelles 2025, budget réduit proposé pour l'avenir proche, et risque concret d'une baisse de revenu significative dès novembre 2026 en cas de retraite anticipée — je propose un remboursement mensuel de CHF 100.–, montant que je m'engage à honorer de manière régulière et soutenable. Ce montant est proposé comme étant soutenable tant dans le meilleur que dans le pire des scénarios professionnels décrits au chapitre 7.",
+          "Au vu de l'ensemble des éléments exposés ci-dessus — charges réelles 2025, budget réduit proposé pour l'avenir proche, et risque concret d'une baisse de revenu significative dès novembre 2026 en cas de retraite anticipée — je propose un remboursement mensuel de CHF 100.–, montant que je m'engage à honorer de manière régulière et soutenable. Ce montant est proposé comme étant soutenable tant dans le meilleur que dans le pire des scénarios professionnels décrits au chapitre 5.",
         ],
       },
       {
